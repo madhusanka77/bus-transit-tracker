@@ -1,0 +1,4 @@
+node_modules/
+location_history.json
+location_history.json.tmp
+location_history.json.corrupt-*

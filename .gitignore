@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+.netlify/
+dist/
+dist-android/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+credentials.json
+backend/location_history.json*
+*.log
