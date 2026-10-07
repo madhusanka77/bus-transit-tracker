@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 /** Backend URL. Local defaults are only used in development builds. */
 export const DEFAULT_SERVER_URL =
   process.env.EXPO_PUBLIC_SERVER_URL ||
+  (Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : '') ||
   Constants.expoConfig?.extra?.serverUrl ||
   (__DEV__ ? (Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000') : '');
 
@@ -11,4 +12,4 @@ export const DEFAULT_SERVER_URL =
 export const BROADCAST_INTERVAL_MS = 3000;
 
 /** Passenger view shows "waiting" if no update arrived within this window. */
-export const STALE_AFTER_MS = 15000;
+export const STALE_AFTER_MS = 20000;

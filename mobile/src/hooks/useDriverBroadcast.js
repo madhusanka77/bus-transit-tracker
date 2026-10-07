@@ -3,68 +3,52 @@ import * as Location from 'expo-location';
 import { BROADCAST_INTERVAL_MS } from '../config';
 import { BUS_ID, ROUTE_ID } from '../data/route177';
 
-/**
- * Driver mode: streams GPS fixes (every ~3 s, BestForNavigation) and emits
- * `updateLocation` over Socket.io while `enabled` is true.
- *
- * Returns { position, error }. `position.speed` is in m/s (as reported by GPS).
- */
-export default function useDriverBroadcast({ socket, enabled }) {
+export default function useDriverBroadcast({ client, enabled }) {
   const [position, setPosition] = useState(null);
   const [error, setError] = useState(null);
-
   useEffect(() => {
-    if (!enabled) {
-      setPosition(null);
-      return undefined;
-    }
-
+    setPosition(null);
+    setError(null);
+    if (!enabled || !client) return undefined;
     let cancelled = false;
-    let subscription = null;
-
+    let subscription;
+    let timer;
+    let latest;
+    let sending = false;
+    const send = async () => {
+      if (cancelled || sending || !latest || Date.now() - latest.fixTime > 15000) return;
+      sending = true;
+      try {
+        await client.publish(latest);
+        if (!cancelled) setError(null);
+      } catch {
+        if (!cancelled) setError('Location could not be sent. Check your internet connection.');
+      } finally { sending = false; }
+    };
     (async () => {
       try {
-        setError(null);
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (cancelled) return;
-        if (status !== 'granted') {
-          if (!cancelled) setError('Location permission denied. Enable it in Settings to broadcast.');
-          return;
-        }
-
-        const sub = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.BestForNavigation,
-            timeInterval: BROADCAST_INTERVAL_MS,
-            distanceInterval: 0,
-          },
-          (loc) => {
-            const { latitude, longitude, speed, heading } = loc.coords;
-            const fix = {
-              busId: BUS_ID,
-              route: ROUTE_ID,
-              latitude,
-              longitude,
-              speed: speed != null && speed > 0 ? speed : 0, // m/s
-              heading: heading != null && heading >= 0 ? heading : 0,
-            };
-            setPosition({ ...fix, timestamp: loc.timestamp });
-            if (socket && socket.connected) socket.emit('updateLocation', fix);
-          }
-        );
-
+        if (status !== 'granted') throw new Error('Location permission denied. Enable it in Settings to broadcast.');
+        const sub = await Location.watchPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: BROADCAST_INTERVAL_MS, distanceInterval: 0,
+        }, (loc) => {
+          if (cancelled) return;
+          const { latitude, longitude, speed, heading } = loc.coords;
+          const first = !latest;
+          latest = { busId: BUS_ID, route: ROUTE_ID, latitude, longitude,
+            speed: speed > 0 ? speed : 0, heading: heading >= 0 ? heading : 0,
+            fixTime: loc.timestamp };
+          setPosition(latest);
+          if (first) send();
+        });
         if (cancelled) sub.remove();
-        else subscription = sub;
-      } catch (e) {
-        if (!cancelled) setError(e?.message || 'Unable to start location updates.');
-      }
+        else { subscription = sub; timer = setInterval(send, BROADCAST_INTERVAL_MS); }
+      } catch (e) { if (!cancelled) setError(e.message || 'Unable to start GPS.'); }
     })();
-
-    return () => {
-      cancelled = true;
-      if (subscription) subscription.remove();
-    };
-  }, [enabled, socket]);
-
+    return () => { cancelled = true; subscription?.remove(); clearInterval(timer); };
+  }, [enabled, client]);
   return { position, error };
 }
+

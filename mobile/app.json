@@ -56,7 +56,7 @@
       "eas": {
         "projectId": "b0e34e05-85a7-4fa6-9674-c5becdc145a4"
       },
-      "serverUrl": ""
+      "serverUrl": "https://route177-bus-tracker.netlify.app"
     }
   }
 }

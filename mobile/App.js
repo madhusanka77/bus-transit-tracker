@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import TransitMap from './src/components/TransitMap';
 import DashboardCard from './src/components/DashboardCard';
-import useSocket from './src/hooks/useSocket';
+import useTransitClient from './src/hooks/useTransitClient';
 import useDriverBroadcast from './src/hooks/useDriverBroadcast';
 import usePassengerFeed from './src/hooks/usePassengerFeed';
 import useTransitInfo from './src/hooks/useTransitInfo';
@@ -25,10 +25,10 @@ export default function App() {
   const [serverError, setServerError] = useState(null);
 
   const isDriver = role === 'driver';
-  const { socket, connected } = useSocket(serverUrl);
+  const { client, connected } = useTransitClient(serverUrl);
 
-  const driver = useDriverBroadcast({ socket, enabled: isDriver && broadcasting });
-  const passenger = usePassengerFeed({ socket, enabled: !isDriver });
+  const driver = useDriverBroadcast({ client, enabled: isDriver && broadcasting });
+  const passenger = usePassengerFeed({ client, enabled: !isDriver });
 
   const position = isDriver ? driver.position : passenger.position;
   const stale = !isDriver && passenger.stale;
