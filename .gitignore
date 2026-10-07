@@ -9,5 +9,8 @@ dist-android/
 *.jks
 *.keystore
 credentials.json
+.signing/
+releases/
+deployment-proof/
 backend/location_history.json*
 *.log

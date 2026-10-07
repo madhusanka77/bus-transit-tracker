@@ -8,7 +8,7 @@
 - Expo project: https://expo.dev/accounts/prathums-team/projects/bus-transit-tracker
 - Android package: `com.transittracker.app`
 
-These links identify the configured targets; check each dashboard for successful build status.
+The website and API are publicly deployed. The source repository remains private.
 
 ## Netlify
 
@@ -36,7 +36,9 @@ or Netlify CLI with function bundling.
 
 The Expo project is connected to GitHub with base directory `/mobile`.
 Use the Builds dashboard to build branch `main`, platform Android, profile `preview`.
-The first build needs an Android signing keystore; let EAS generate one or supply your own.
+Expo stores the Android signing keystore for this app. A local backup is in `.signing/`
+(`android-keystore.jks` and `credentials.json`), excluded from Git. Keep a secure backup
+of both files: future APK updates must use the same signing key.
 
 Alternatively:
 ```powershell
